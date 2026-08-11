@@ -1,10 +1,5 @@
-[global]
-name = "ai-agent-workflow-builder"
-
 [hasura]
 version = "v2.36.0"
-adminSecret = "{{ env.HASURA_GRAPHQL_ADMIN_SECRET }}"
-webhookSecret = "{{ env.NHOST_WEBHOOK_SECRET }}"
 
 [hasura.settings]
 enableRemoteSchemaPermissions = false
