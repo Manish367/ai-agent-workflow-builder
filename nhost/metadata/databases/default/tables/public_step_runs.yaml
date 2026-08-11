@@ -1,0 +1,53 @@
+table:
+  name: step_runs
+  schema: public
+
+object_relationships:
+  - name: workflow_run
+    using:
+      foreign_key_constraint_on: workflow_run_id
+  - name: workflow_step
+    using:
+      foreign_key_constraint_on: workflow_step_id
+  - name: organization
+    using:
+      foreign_key_constraint_on: org_id
+  - name: approver
+    using:
+      manual_configuration:
+        remote_table:
+          name: users
+          schema: auth
+        column_mapping:
+          approved_by: id
+
+# Same as workflow_runs: select-only for role "user". The subscription the frontend
+# uses for live per-step progress (filtered by workflow_run_id) reads through this
+# permission, so cross-org isolation holds for the subscription too, automatically —
+# a user simply cannot subscribe to rows outside orgs they belong to, no matter what
+# workflow_run_id they pass. Approving a paused approval_gate step goes through the
+# `approveStep` Action, never a direct update — see functions/actions/approve-step.ts.
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - id
+        - workflow_run_id
+        - workflow_step_id
+        - org_id
+        - status
+        - input
+        - output
+        - error
+        - attempt
+        - approved_by
+        - approved_at
+        - started_at
+        - finished_at
+        - created_at
+        - updated_at
+      filter:
+        organization:
+          members:
+            user_id:
+              _eq: X-Hasura-User-Id

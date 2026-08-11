@@ -1,0 +1,11 @@
+# One Postgres source: the nhost-managed database. `hasura metadata apply` fills in
+# the connection string from the NHOST/HASURA env at deploy time — nothing secret here.
+- name: default
+  kind: postgres
+  configuration:
+    connection_info:
+      database_url:
+        from_env: HASURA_GRAPHQL_DATABASE_URL
+      isolation_level: read-committed
+      use_prepared_statements: true
+  tables: "!include default/tables/tables.yaml"

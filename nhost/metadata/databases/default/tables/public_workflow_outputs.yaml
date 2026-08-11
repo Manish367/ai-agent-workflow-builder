@@ -1,0 +1,32 @@
+table:
+  name: workflow_outputs
+  schema: public
+
+object_relationships:
+  - name: organization
+    using:
+      foreign_key_constraint_on: org_id
+  - name: workflow_run
+    using:
+      foreign_key_constraint_on: workflow_run_id
+  - name: step_run
+    using:
+      foreign_key_constraint_on: step_run_id
+
+# Written only by db_write steps in the Action handler (admin secret). Read-only for
+# users, org-scoped like everything else.
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - id
+        - org_id
+        - workflow_run_id
+        - step_run_id
+        - data
+        - created_at
+      filter:
+        organization:
+          members:
+            user_id:
+              _eq: X-Hasura-User-Id

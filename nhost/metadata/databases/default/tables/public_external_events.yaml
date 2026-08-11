@@ -1,0 +1,61 @@
+table:
+  name: external_events
+  schema: public
+
+object_relationships:
+  - name: organization
+    using:
+      foreign_key_constraint_on: org_id
+
+# This is the "watched table" for the `database_event` trigger type. Unlike the
+# child tables above, org_id here has no workflow_id parent to derive from — it IS
+# the scoping column — so it's client-supplied and checked directly against
+# membership. An owner/editor can insert a row here (in the demo UI: a "simulate
+# external event" button) standing in for a real external system's write; the event
+# trigger below is what actually starts the matching workflow_run(s).
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - id
+        - org_id
+        - source
+        - payload
+        - processed
+        - created_at
+      filter:
+        organization:
+          members:
+            user_id:
+              _eq: X-Hasura-User-Id
+
+insert_permissions:
+  - role: user
+    permission:
+      columns:
+        - org_id
+        - source
+        - payload
+      check:
+        organization:
+          members:
+            _and:
+              - user_id:
+                  _eq: X-Hasura-User-Id
+              - role:
+                  _in: [owner, editor]
+
+event_triggers:
+  - name: database_event_watch
+    definition:
+      enable_manual: false
+      insert:
+        columns: "*"
+    retry_conf:
+      num_retries: 3
+      interval_sec: 15
+      timeout_sec: 60
+    webhook_from_env: DATABASE_EVENT_WEBHOOK_URL
+    headers:
+      - name: x-event-secret
+        value_from_env: EVENT_TRIGGER_SECRET

@@ -1,0 +1,31 @@
+table:
+  name: users
+  schema: auth
+
+array_relationships:
+  - name: org_memberships
+    using:
+      foreign_key_constraint_on:
+        column: user_id
+        table:
+          name: org_members
+          schema: public
+
+# auth.users is managed by nhost Auth, not this app — tracked here only so the
+# creator/approver/triggered_by_user/org_members.user relationships resolve. Kept
+# deliberately narrow: a caller can only see another user's id/display_name/email if
+# they share at least one org (via org_memberships -> organization -> members),
+# never a global user directory. That mirrors Layer 1 for every other table.
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - id
+        - display_name
+        - email
+      filter:
+        org_memberships:
+          organization:
+            members:
+              user_id:
+                _eq: X-Hasura-User-Id

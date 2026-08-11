@@ -1,0 +1,28 @@
+{
+  "name": "ai-agent-workflow-builder-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@apollo/client": "^3.9.9",
+    "@nhost/nhost-js": "3.3.1",
+    "@nhost/react": "3.11.2",
+    "@nhost/react-apollo": "18.0.2",
+    "graphql": "^16.8.1",
+    "graphql-ws": "^5.15.0",
+    "next": "14.2.35",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "typescript": "^5.4.0"
+  }
+}

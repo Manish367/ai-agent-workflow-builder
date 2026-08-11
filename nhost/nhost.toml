@@ -1,0 +1,28 @@
+[global]
+name = "ai-agent-workflow-builder"
+
+[hasura]
+version = "v2.36.0"
+adminSecret = "{{ env.HASURA_GRAPHQL_ADMIN_SECRET }}"
+webhookSecret = "{{ env.NHOST_WEBHOOK_SECRET }}"
+
+[hasura.settings]
+enableRemoteSchemaPermissions = false
+
+[functions]
+[functions.node]
+version = 18
+
+[auth]
+[auth.method.emailPassword]
+hibpEnabled = false
+emailVerificationRequired = false
+
+[postgres]
+version = "14"
+
+# Scheduled trigger for `workflow_triggers.type = 'scheduled'`.
+# Hasura itself calls this on a fixed cadence; the function then looks at each
+# scheduled trigger's own cron expression + last_run_at to decide what's actually due.
+# (Kept here for local `nhost up` — the same cron is also declared in
+# nhost/metadata/cron_triggers.yaml for the Hasura-native version.)

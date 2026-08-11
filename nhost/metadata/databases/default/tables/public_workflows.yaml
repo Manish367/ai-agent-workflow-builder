@@ -1,0 +1,105 @@
+table:
+  name: workflows
+  schema: public
+
+object_relationships:
+  - name: organization
+    using:
+      foreign_key_constraint_on: org_id
+  - name: creator
+    using:
+      manual_configuration:
+        remote_table:
+          name: users
+          schema: auth
+        column_mapping:
+          created_by: id
+
+array_relationships:
+  - name: steps
+    using:
+      foreign_key_constraint_on:
+        column: workflow_id
+        table:
+          name: workflow_steps
+          schema: public
+  - name: triggers
+    using:
+      foreign_key_constraint_on:
+        column: workflow_id
+        table:
+          name: workflow_triggers
+          schema: public
+  - name: runs
+    using:
+      foreign_key_constraint_on:
+        column: workflow_id
+        table:
+          name: workflow_runs
+          schema: public
+
+# Layer 1 only here — workflows themselves aren't a "sensitive step type", so plain
+# org+role scoping is enough. `runs(order_by: {created_at: desc}, limit: 1)` in the
+# query is how the frontend gets "most recent run status" without extra metadata.
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - id
+        - org_id
+        - name
+        - description
+        - created_by
+        - created_at
+        - updated_at
+      filter:
+        organization:
+          members:
+            user_id:
+              _eq: X-Hasura-User-Id
+
+insert_permissions:
+  - role: user
+    permission:
+      columns:
+        - org_id
+        - name
+        - description
+      set:
+        created_by: x-hasura-User-Id
+      check:
+        organization:
+          members:
+            _and:
+              - user_id:
+                  _eq: X-Hasura-User-Id
+              - role:
+                  _in: [owner, editor]
+
+update_permissions:
+  - role: user
+    permission:
+      columns:
+        - name
+        - description
+      filter:
+        organization:
+          members:
+            _and:
+              - user_id:
+                  _eq: X-Hasura-User-Id
+              - role:
+                  _in: [owner, editor]
+      check: null
+
+delete_permissions:
+  - role: user
+    permission:
+      filter:
+        organization:
+          members:
+            _and:
+              - user_id:
+                  _eq: X-Hasura-User-Id
+              - role:
+                  _in: [owner, editor]

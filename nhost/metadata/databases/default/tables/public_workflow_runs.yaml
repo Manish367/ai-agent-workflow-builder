@@ -1,0 +1,53 @@
+table:
+  name: workflow_runs
+  schema: public
+
+object_relationships:
+  - name: workflow
+    using:
+      foreign_key_constraint_on: workflow_id
+  - name: organization
+    using:
+      foreign_key_constraint_on: org_id
+  - name: triggered_by_user
+    using:
+      manual_configuration:
+        remote_table:
+          name: users
+          schema: auth
+        column_mapping:
+          triggered_by: id
+
+array_relationships:
+  - name: step_runs
+    using:
+      foreign_key_constraint_on:
+        column: workflow_run_id
+        table:
+          name: step_runs
+          schema: public
+
+# Deliberately no insert/update/delete permissions for role "user" on this table.
+# Runs are only ever created/mutated by the Action handler (triggerWorkflowRun,
+# approveStep) using the Hasura admin secret, which bypasses these permissions
+# entirely. That's what makes "viewer cannot trigger a run" airtight: there is no
+# GraphQL mutation path to workflow_runs a viewer (or anyone) could call directly —
+# the only door in is the Action, which re-checks role itself.
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - id
+        - workflow_id
+        - org_id
+        - status
+        - trigger_type
+        - triggered_by
+        - started_at
+        - finished_at
+        - created_at
+      filter:
+        organization:
+          members:
+            user_id:
+              _eq: X-Hasura-User-Id

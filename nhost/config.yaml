@@ -1,0 +1,8 @@
+version: 3
+endpoint: https://plkfqikffdkkfvzbogtd.hasura.eu-central-1.nhost.run
+metadata_directory: metadata
+migrations_directory: migrations
+seeds_directory: seeds
+actions:
+  kind: synchronous
+  handler_webhook_baseurl: http://localhost:3000

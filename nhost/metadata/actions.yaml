@@ -1,0 +1,46 @@
+actions:
+  - name: triggerWorkflowRun
+    definition:
+      kind: synchronous
+      handler: "{{ACTIONS_BASE_URL}}/actions/trigger-workflow-run"
+      forward_client_headers: true
+      headers:
+        - name: x-action-secret
+          value_from_env: ACTION_SECRET
+      timeout: 120
+    permissions:
+      - role: user
+
+  - name: approveStep
+    definition:
+      kind: synchronous
+      handler: "{{ACTIONS_BASE_URL}}/actions/approve-step"
+      forward_client_headers: true
+      headers:
+        - name: x-action-secret
+          value_from_env: ACTION_SECRET
+      timeout: 60
+    permissions:
+      - role: user
+
+  - name: webhookTriggerRun
+    definition:
+      kind: synchronous
+      handler: "{{ACTIONS_BASE_URL}}/actions/webhook-trigger-run"
+      forward_client_headers: false
+      headers:
+        - name: x-action-secret
+          value_from_env: ACTION_SECRET
+      timeout: 120
+    permissions:
+      - role: public
+
+custom_types:
+  enums: []
+  input_objects: []
+  scalars:
+    - name: uuid
+  objects:
+    - name: TriggerWorkflowRunOutput
+    - name: ApproveStepOutput
+    - name: WebhookTriggerRunOutput

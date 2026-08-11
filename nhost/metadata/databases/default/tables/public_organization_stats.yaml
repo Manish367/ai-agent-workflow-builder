@@ -1,0 +1,31 @@
+table:
+  name: organization_stats
+  schema: public
+
+object_relationships:
+  - name: organization
+    using:
+      manual_configuration:
+        remote_table:
+          name: organizations
+          schema: public
+        column_mapping:
+          org_id: id
+
+# Read-only aggregation view (avg run duration + runs this month), scoped the same
+# way as everything else: only members of the org can read its own stats row.
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - org_id
+        - quota_calls_used
+        - quota_calls_allowed
+        - quota_period_start
+        - runs_this_month
+        - avg_run_duration_seconds
+      filter:
+        organization:
+          members:
+            user_id:
+              _eq: X-Hasura-User-Id
