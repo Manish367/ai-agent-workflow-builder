@@ -1,20 +1,13 @@
 [hasura]
-version = "v2.36.0"
-
 [hasura.settings]
-enableRemoteSchemaPermissions = false
 
 [functions]
 [functions.node]
-version = 18
+version = 20
 
 [auth]
 [auth.method.emailPassword]
-hibpEnabled = false
 emailVerificationRequired = false
-
-[postgres]
-version = "14"
 
 # Scheduled trigger for `workflow_triggers.type = 'scheduled'`.
 # Hasura itself calls this on a fixed cadence; the function then looks at each
