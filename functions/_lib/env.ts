@@ -8,8 +8,11 @@ export const env = {
   // Hasura GraphQL endpoint + admin secret: the engine talks to Hasura as admin,
   // which is what lets it write workflow_runs/step_runs even though those tables
   // have no insert/update permission for role "user" (see nhost/metadata).
-  hasuraGraphqlUrl: () => required("HASURA_GRAPHQL_URL"),
-  hasuraAdminSecret: () => required("HASURA_GRAPHQL_ADMIN_SECRET"),
+  // Custom env var names can't start with NHOST_/HASURA_/AUTH_/STORAGE_/POSTGRES_ on
+  // nhost cloud, so the endpoint uses a plain name; the admin secret reuses the
+  // system-provided NHOST_ADMIN_SECRET (same value, already injected — no custom var needed).
+  hasuraGraphqlUrl: () => required("GRAPHQL_ENDPOINT"),
+  hasuraAdminSecret: () => required("NHOST_ADMIN_SECRET"),
 
   // Shared secrets Hasura sends back to us, so a handler can refuse any request
   // that didn't actually come from our own Hasura instance.
