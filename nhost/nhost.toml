@@ -1,6 +1,3 @@
-[hasura]
-[hasura.settings]
-
 [functions]
 [functions.node]
 version = 20
@@ -14,3 +11,8 @@ emailVerificationRequired = false
 # scheduled trigger's own cron expression + last_run_at to decide what's actually due.
 # (Kept here for local `nhost up` — the same cron is also declared in
 # nhost/metadata/cron_triggers.yaml for the Hasura-native version.)
+#
+# Deliberately no [hasura] table here: the cloud deploy's "Project Config" step
+# appears to do a full validate/replace of whatever top-level table is present,
+# and this project's existing jwtSecrets config doesn't round-trip cleanly through
+# that validation — so leaving [hasura] out entirely avoids touching it.
