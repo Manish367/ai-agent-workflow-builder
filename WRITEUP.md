@@ -47,7 +47,7 @@ kinds of question:
   stays declarative: one boolean expression per table combining Layer 1's org/role
   check with a `type _nin/_neq [...]` branch, so the *same* permission rule is
   "owner-or-editor" for ordinary types and "owner-only" for the sensitive ones. See
-  `workflow_steps`/`workflow_triggers` in `nhost/metadata/`.
+  `workflow_steps`/`workflow_triggers` in `metadata/`.
 
 - *"Can this role clear this specific paused gate, right now?"* is not a row
   permission at all — it's a state transition (`paused → succeeded/failed`) that

@@ -4,24 +4,23 @@ A mini n8n for chaining AI agent steps, built on nhost (Postgres + Hasura + Auth
 Next.js frontend. Organizations, role-scoped permissions at two layers, workflow
 steps/triggers, and a Hasura Action-driven execution engine with live subscriptions.
 
-> **Environment note:** this repo was authored in a sandbox with Node/npm/git but
-> **no Docker and no nhost/Hasura CLI available**, so the schema/metadata/handlers
-> below have been written carefully and type-checked (`functions/` passes `tsc
-> --noEmit`, `frontend/` passes `next build`), but **not run against a live
-> Hasura/Postgres instance**. Follow the steps below to stand it up; if something in
-> the metadata format needs a small tweak once you point a real Hasura Console at it,
-> that's expected — the Console's "Consistency" checker will point at exactly what.
+> **Environment note:** this was authored without Docker available, so instead of
+> local `nhost up` it was applied straight to an **nhost cloud** project — the
+> standalone [Hasura CLI](https://hasura.io/docs/latest/hasura-cli/overview/) (no
+> Docker needed) for `migrate apply`/`metadata apply`, and nhost's GitHub-connected
+> **Deployments** for the Functions. Local `nhost up` (Docker) works too if you
+> prefer it — see the alternate path below.
 
 ## Architecture
 
 ```
-nhost/
-  migrations/default/…        Postgres schema (tables, enums, triggers, view)
-  seeds/default/…              Demo org/member seed for the Final Task scenario
-  metadata/                    Hasura metadata: tables, relationships, permissions,
-                                actions, event triggers, cron trigger
-  nhost.toml                   nhost project config
-  example-operations.graphql   Reference queries/mutations/subscription
+migrations/default/…        Postgres schema (tables, enums, triggers, view)
+seeds/default/…              Demo org/member seed for the Final Task scenario
+metadata/                    Hasura metadata: tables, relationships, permissions,
+                              actions, event triggers, cron trigger
+nhost.toml                   nhost project config
+config.yaml                  Hasura CLI project config (endpoint, directories)
+example-operations.graphql   Reference queries/mutations/subscription
 functions/                     Hasura Action / Event Trigger / Cron handlers (TS)
   _lib/engine.ts               Core run executor: quota, retries, pause/resume
   actions/                     triggerWorkflowRun, approveStep, webhookTriggerRun
@@ -37,7 +36,7 @@ frontend/                      Next.js app (Pages Router) — auth, builder, run
 `workflow_outputs` (db_write target), `notifications` (notify outbox),
 `external_events` (the watched table for `database_event` triggers), and a
 `organization_stats` view (runs this month + avg run duration) for the required
-aggregation. See [`nhost/migrations/default/1755000000000_init_schema/up.sql`](nhost/migrations/default/1755000000000_init_schema/up.sql)
+aggregation. See [`migrations/default/1755000000000_init_schema/up.sql`](migrations/default/1755000000000_init_schema/up.sql)
 for the full DDL and inline comments explaining the integrity triggers.
 
 ## The two permission layers
@@ -58,7 +57,7 @@ two different kinds of decision:
 - *Who can add a sensitive step/trigger* (`db_write`, `notify`, webhook trigger) is
   still a Hasura permission — one boolean expression combining Layer 1 + a
   `type _nin [...]` check, so non-sensitive types are owner-or-editor and sensitive
-  ones are owner-only. See [`public_workflow_steps.yaml`](nhost/metadata/databases/default/tables/public_workflow_steps.yaml).
+  ones are owner-only. See [`public_workflow_steps.yaml`](metadata/databases/default/tables/public_workflow_steps.yaml).
 - *Clearing an `approval_gate`* is **not** a database permission — see
   [`functions/actions/approve-step.ts`](functions/actions/approve-step.ts): the
   handler loads the step_run, confirms it's actually `paused`, re-queries
@@ -90,72 +89,90 @@ actually made.
 ## Prerequisites
 
 - Node.js 18+, npm
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (for local
-  Hasura/Postgres via the nhost CLI) **or** an [nhost](https://nhost.io) cloud
-  project
-- The [nhost CLI](https://docs.nhost.io/reference/cli/installation)
+- An [nhost](https://nhost.io) cloud project (free tier) — Postgres/Hasura/Auth/
+  Functions all hosted, no Docker needed. (Local `nhost up` via the
+  [nhost CLI](https://docs.nhost.io/reference/cli/installation) works too, but that
+  CLI requires Docker + WSL2 on Windows.)
+- The standalone [Hasura CLI](https://github.com/hasura/graphql-engine/releases) —
+  a single binary, no Docker — for applying migrations/metadata directly.
 - Optional: a free-tier LLM API key ([Groq](https://console.groq.com),
   [OpenRouter](https://openrouter.ai), or [Gemini](https://ai.google.dev)) — without
   one, `llm_call` steps use a disclosed stub with an artificial delay
 - Optional: a Slack [incoming webhook URL](https://api.slack.com/messaging/webhooks)
   — without one, `notify` steps log to the function's console instead of sending
 
-## Setup
+## Setup (nhost cloud — the path this repo was actually built and tested against)
 
-1. **Start the backend**
-   ```bash
-   npm install -g nhost
-   cd nhost
-   nhost up
-   ```
-   This starts local Postgres + Hasura + Auth and applies the migrations in
-   `nhost/migrations/`. Then apply metadata:
-   ```bash
-   nhost hasura metadata apply
-   ```
-   (or open the Hasura Console nhost prints and use "Metadata → Apply" / import the
-   `nhost/metadata` folder.)
+1. **Create an nhost project** at [app.nhost.io](https://app.nhost.io) and note its
+   **subdomain** and **region** from the project dashboard.
 
-2. **Configure project secrets** (local: a `.env.development` file at the `nhost/`
-   project root; cloud: `nhost secrets create` or the dashboard's Environment Variables
-   panel). These are read by *Hasura*, which forwards them to your webhook URLs and
-   also needs `HASURA_GRAPHQL_ADMIN_SECRET`/`HASURA_GRAPHQL_DATABASE_URL` for itself
-   (the CLI sets those two automatically for local dev):
+2. **Point `config.yaml` at it** — edit the `endpoint:` line to
+   `https://<subdomain>.hasura.<region>.nhost.run`.
+
+3. **Apply the schema and metadata** with the Hasura CLI, from the repo root:
+   ```bash
+   hasura migrate apply --database-name default --admin-secret <your admin secret>
+   hasura metadata apply --admin-secret <your admin secret>
    ```
+   The admin secret's real value is under **Settings → Secrets** in the dashboard
+   (write-only in the UI — if you can't reveal it, just overwrite it with your own
+   random string via the ⋮ menu, then use that).
+
+4. **Set project environment variables** (**Settings → Environment Variables**).
+   Custom variable names can't start with `NHOST_`/`HASURA_`/`AUTH_`/`STORAGE_`/
+   `POSTGRES_`, hence the naming below:
+   ```
+   GRAPHQL_ENDPOINT=https://<subdomain>.hasura.<region>.nhost.run/v1/graphql
    ACTION_SECRET=<random string>
    EVENT_TRIGGER_SECRET=<random string>
-   ACTIONS_BASE_URL=<url nhost prints for your functions — see `nhost up` output>
-   NOTIFICATION_OUTBOX_WEBHOOK_URL=${ACTIONS_BASE_URL}/events/notification-outbox
-   DATABASE_EVENT_WEBHOOK_URL=${ACTIONS_BASE_URL}/events/database-event-trigger
+   ACTIONS_BASE_URL=https://<subdomain>.functions.<region>.nhost.run/v1
+   NOTIFICATION_OUTBOX_WEBHOOK_URL=https://<subdomain>.functions.<region>.nhost.run/v1/events/notification-outbox
+   DATABASE_EVENT_WEBHOOK_URL=https://<subdomain>.functions.<region>.nhost.run/v1/events/database-event-trigger
+   LLM_PROVIDER=stub
    ```
+   `NHOST_ADMIN_SECRET` already exists as a system variable — the functions read
+   that directly, no need to duplicate it.
 
-3. **Configure the functions themselves** — copy `functions/.env.example` to
-   `functions/.env` and fill in `HASURA_GRAPHQL_URL`, `HASURA_GRAPHQL_ADMIN_SECRET`,
-   the same `ACTION_SECRET`/`EVENT_TRIGGER_SECRET` as step 2, and optionally
-   `LLM_PROVIDER`/`LLM_API_KEY`/`SLACK_WEBHOOK_URL`. The nhost CLI serves
-   `functions/` automatically as part of `nhost up`.
+5. **Deploy the Functions** — push this repo to GitHub, then in
+   **Settings → Deployments**, "Connect to GitHub", pick the repo, and set
+   **Base Directory to `./`** (repo root — `migrations/`, `metadata/`, `functions/`
+   all live there as siblings, which is the layout nhost's deploy step expects).
+   Automatic Deploys will build on every push from here on.
 
-4. **Seed the Final Task demo data** — sign up 5 users through the frontend (see
-   step 6) using the emails referenced in
-   [`nhost/seeds/default/001_demo_orgs.sql`](nhost/seeds/default/001_demo_orgs.sql)
-   (or edit the file to use your own), then apply it:
+6. **Seed the Final Task demo data** — sign up 5 users through the frontend (step
+   8 below) using the emails referenced in
+   [`seeds/default/001_demo_orgs.sql`](seeds/default/001_demo_orgs.sql) (or edit the
+   file to use your own), then apply it:
    ```bash
-   nhost hasura seed apply --database-name default
+   hasura seed apply --database-name default --admin-secret <your admin secret>
    ```
 
-5. **Run the frontend**
+7. **Verify the Action handler is reachable** once deployed:
+   ```bash
+   curl -X POST https://<subdomain>.functions.<region>.nhost.run/v1/actions/trigger-workflow-run \
+     -H "content-type: application/json" -H "x-action-secret: <ACTION_SECRET>" -d '{"input":{}}'
+   ```
+   A JSON error about a missing `workflow_id` (rather than a 500 "item not found")
+   means the function is live.
+
+8. **Run the frontend**
    ```bash
    cd frontend
    npm install
-   cp .env.local.example .env.local   # defaults to subdomain "local", no edits needed
+   cp .env.local.example .env.local
+   # set NEXT_PUBLIC_NHOST_SUBDOMAIN / NEXT_PUBLIC_NHOST_REGION to your project's
    npm run dev
    ```
-   Open http://localhost:3000.
+   Open http://localhost:3000. For the hosted deliverable, deploy `frontend/` to
+   [Vercel](https://vercel.com) (root directory `frontend/`, same two env vars).
 
-6. **Deploying**: push this repo to GitHub, connect it to
-   [nhost cloud](https://nhost.io) (Postgres/Hasura/Auth/Functions) and
-   [Vercel](https://vercel.com) (root directory `frontend/`, env vars
-   `NEXT_PUBLIC_NHOST_SUBDOMAIN`/`NEXT_PUBLIC_NHOST_REGION` from your nhost project).
+### Alternate: local Docker instead of cloud
+
+If you have Docker Desktop (and, on Windows, WSL2) available: `npm install -g nhost`,
+then `nhost up` from the repo root applies `migrations/`/`metadata/` and serves
+`functions/` automatically against a local Postgres+Hasura+Auth stack — no manual
+Hasura CLI steps or dashboard env vars needed, `nhost up`'s own output prints the
+local functions URL to use for `ACTIONS_BASE_URL` etc.
 
 ## Demonstrating the Final Task scenario
 

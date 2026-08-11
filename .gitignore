@@ -4,8 +4,8 @@ dist/
 build/
 .env
 .env.local
-nhost/.env
-nhost/.env.*
+.env.development
+.env.production
 *.log
 .DS_Store
 .bin/
