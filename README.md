@@ -14,18 +14,23 @@ steps/triggers, and a Hasura Action-driven execution engine with live subscripti
 ## Architecture
 
 ```
-migrations/default/…        Postgres schema (tables, enums, triggers, view)
-seeds/default/…              Demo org/member seed for the Final Task scenario
-metadata/                    Hasura metadata: tables, relationships, permissions,
-                              actions, event triggers, cron trigger
-nhost.toml                   nhost project config
-config.yaml                  Hasura CLI project config (endpoint, directories)
-example-operations.graphql   Reference queries/mutations/subscription
-functions/                     Hasura Action / Event Trigger / Cron handlers (TS)
-  _lib/engine.ts               Core run executor: quota, retries, pause/resume
-  actions/                     triggerWorkflowRun, approveStep, webhookTriggerRun
-  events/                      notification outbox sender, database-event starter
-  scheduled/                   cron poller for `scheduled` triggers
+nhost/                        nhost project — must be a literal "nhost/" folder at
+                               repo root: that's the deploy convention nhost cloud's
+                               Deployments step expects (Base Directory = the parent
+                               of this folder)
+  nhost.toml                   nhost project config
+  config.yaml                  Hasura CLI project config (endpoint, directories)
+  migrations/default/…         Postgres schema (tables, enums, triggers, view)
+  metadata/                    Hasura metadata: tables, relationships, permissions,
+                                actions, event triggers, cron trigger
+  seeds/default/…              Demo org/member seed for the Final Task scenario
+  example-operations.graphql   Reference queries/mutations/subscription
+functions/                     Hasura Action / Event Trigger / Cron handlers (TS) —
+                                sibling of nhost/, NOT nested inside it
+  _lib/engine.ts                Core run executor: quota, retries, pause/resume
+  actions/                      triggerWorkflowRun, approveStep, webhookTriggerRun
+  events/                       notification outbox sender, database-event starter
+  scheduled/                    cron poller for `scheduled` triggers
 frontend/                      Next.js app (Pages Router) — auth, builder, run view
 ```
 
@@ -36,7 +41,7 @@ frontend/                      Next.js app (Pages Router) — auth, builder, run
 `workflow_outputs` (db_write target), `notifications` (notify outbox),
 `external_events` (the watched table for `database_event` triggers), and a
 `organization_stats` view (runs this month + avg run duration) for the required
-aggregation. See [`migrations/default/1755000000000_init_schema/up.sql`](migrations/default/1755000000000_init_schema/up.sql)
+aggregation. See [`nhost/migrations/default/1755000000000_init_schema/up.sql`](nhost/migrations/default/1755000000000_init_schema/up.sql)
 for the full DDL and inline comments explaining the integrity triggers.
 
 ## The two permission layers
@@ -57,7 +62,7 @@ two different kinds of decision:
 - *Who can add a sensitive step/trigger* (`db_write`, `notify`, webhook trigger) is
   still a Hasura permission — one boolean expression combining Layer 1 + a
   `type _nin [...]` check, so non-sensitive types are owner-or-editor and sensitive
-  ones are owner-only. See [`public_workflow_steps.yaml`](metadata/databases/default/tables/public_workflow_steps.yaml).
+  ones are owner-only. See [`public_workflow_steps.yaml`](nhost/metadata/databases/default/tables/public_workflow_steps.yaml).
 - *Clearing an `approval_gate`* is **not** a database permission — see
   [`functions/actions/approve-step.ts`](functions/actions/approve-step.ts): the
   handler loads the step_run, confirms it's actually `paused`, re-queries
@@ -106,11 +111,14 @@ actually made.
 1. **Create an nhost project** at [app.nhost.io](https://app.nhost.io) and note its
    **subdomain** and **region** from the project dashboard.
 
-2. **Point `config.yaml` at it** — edit the `endpoint:` line to
+2. **Point `nhost/config.yaml` at it** — edit the `endpoint:` line to
    `https://<subdomain>.hasura.<region>.nhost.run`.
 
-3. **Apply the schema and metadata** with the Hasura CLI, from the repo root:
+3. **Apply the schema and metadata** with the Hasura CLI, from the `nhost/` folder
+   (that's where `config.yaml` and the `migrations/`/`metadata/`/`seeds/` it points
+   at live):
    ```bash
+   cd nhost
    hasura migrate apply --database-name default --admin-secret <your admin secret>
    hasura metadata apply --admin-secret <your admin secret>
    ```
@@ -135,14 +143,15 @@ actually made.
 
 5. **Deploy the Functions** — push this repo to GitHub, then in
    **Settings → Deployments**, "Connect to GitHub", pick the repo, and set
-   **Base Directory to `./`** (repo root — `migrations/`, `metadata/`, `functions/`
-   all live there as siblings, which is the layout nhost's deploy step expects).
+   **Base Directory to `./`** (repo root — nhost's deploy step expects `Base
+   Directory/nhost/nhost.toml` plus a sibling `Base Directory/functions/`, which is
+   exactly `nhost/` + `functions/` both living at repo root).
    Automatic Deploys will build on every push from here on.
 
 6. **Seed the Final Task demo data** — sign up 5 users through the frontend (step
    8 below) using the emails referenced in
-   [`seeds/default/001_demo_orgs.sql`](seeds/default/001_demo_orgs.sql) (or edit the
-   file to use your own), then apply it:
+   [`nhost/seeds/default/001_demo_orgs.sql`](nhost/seeds/default/001_demo_orgs.sql)
+   (or edit the file to use your own), then apply it from the `nhost/` folder:
    ```bash
    hasura seed apply --database-name default --admin-secret <your admin secret>
    ```
@@ -169,10 +178,10 @@ actually made.
 ### Alternate: local Docker instead of cloud
 
 If you have Docker Desktop (and, on Windows, WSL2) available: `npm install -g nhost`,
-then `nhost up` from the repo root applies `migrations/`/`metadata/` and serves
-`functions/` automatically against a local Postgres+Hasura+Auth stack — no manual
-Hasura CLI steps or dashboard env vars needed, `nhost up`'s own output prints the
-local functions URL to use for `ACTIONS_BASE_URL` etc.
+then `nhost up` from the repo root applies `nhost/migrations/`/`nhost/metadata/` and
+serves `functions/` automatically against a local Postgres+Hasura+Auth stack — no
+manual Hasura CLI steps or dashboard env vars needed, `nhost up`'s own output prints
+the local functions URL to use for `ACTIONS_BASE_URL` etc.
 
 ## Demonstrating the Final Task scenario
 
