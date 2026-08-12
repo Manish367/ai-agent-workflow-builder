@@ -319,7 +319,14 @@ function evaluateCondition(actual: unknown, operator: string, expected: unknown)
     case "not_equals":
       return actual !== expected;
     case "contains":
-      return typeof actual === "string" && typeof expected === "string" && actual.includes(expected);
+      // Case-insensitive: real LLM output casing (e.g. "Urgent" vs "urgent") is
+      // never fully predictable, and this operator is meant for loose text
+      // matching, not exact comparison (use "equals" for that).
+      return (
+        typeof actual === "string" &&
+        typeof expected === "string" &&
+        actual.toLowerCase().includes(expected.toLowerCase())
+      );
     case "greater_than":
       return Number(actual) > Number(expected);
     case "less_than":
