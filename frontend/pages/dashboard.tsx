@@ -27,8 +27,17 @@ export default function Dashboard() {
   const [orgId, setOrgId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!orgId && memberships.length > 0) setOrgId(memberships[0].org_id);
-  }, [memberships, orgId]);
+    if (orgId || memberships.length === 0) return;
+    const prefer = router.query.prefer;
+    const wantOwner = prefer === "owner";
+    const wantMember = prefer === "member";
+    const preferred = wantOwner
+      ? memberships.find((m: any) => m.role === "owner")
+      : wantMember
+      ? memberships.find((m: any) => m.role !== "owner")
+      : undefined;
+    setOrgId((preferred ?? memberships[0]).org_id);
+  }, [memberships, orgId, router.query.prefer]);
 
   const myRole: string | undefined = useMemo(
     () => memberships.find((m: any) => m.org_id === orgId)?.role,
