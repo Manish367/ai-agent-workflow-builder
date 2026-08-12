@@ -56,8 +56,25 @@ export default function WorkflowPage() {
     await refetch();
   }
 
+  // Deleting a step leaves a gap in step_order (e.g. 3, 6, 7) since remaining steps
+  // keep their old values -- harmless for execution (which just sorts ascending),
+  // but confusing to look at. Renumber everything back to a contiguous 1..N right
+  // after a delete. Two passes to avoid colliding with the (workflow_id, step_order)
+  // unique constraint: move everything to negative scratch values first, then to
+  // their final positions.
+  async function renumberSteps(remainingSteps: { id: string }[]) {
+    for (let i = 0; i < remainingSteps.length; i++) {
+      await updateStepOrder({ variables: { id: remainingSteps[i].id, step_order: -(i + 1) } });
+    }
+    for (let i = 0; i < remainingSteps.length; i++) {
+      await updateStepOrder({ variables: { id: remainingSteps[i].id, step_order: i + 1 } });
+    }
+  }
+
   async function onDeleteStep(stepId: string) {
     await deleteStep({ variables: { id: stepId } });
+    const remaining = workflow.steps.filter((s: any) => s.id !== stepId);
+    await renumberSteps(remaining);
     await refetch();
   }
 
