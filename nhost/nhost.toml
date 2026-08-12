@@ -197,6 +197,10 @@ value = "{{ secrets.LLM_API_KEY }}"
 name = "LLM_MODEL"
 value = "llama-3.1-8b-instant"
 
+[[global.environment]]
+name = "SLACK_WEBHOOK_URL"
+value = "{{ secrets.SLACK_WEBHOOK_URL }}"
+
 [hasura]
 adminSecret = "{{ secrets.HASURA_GRAPHQL_ADMIN_SECRET }}"
 version = "v2.48.10-ce"
