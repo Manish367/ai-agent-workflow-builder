@@ -2,7 +2,7 @@ import { FormEvent, useState } from "react";
 import { useMutation, useQuery } from "@apollo/client";
 import { ORG_MEMBERS, ADD_ORG_MEMBERS, UPDATE_MEMBER_ROLE, REMOVE_MEMBER } from "@/graphql/queries";
 
-const ROLES = ["owner", "editor", "viewer"] as const;
+const ROLES = ["editor", "viewer"] as const;
 
 interface PendingMember {
   email: string;
@@ -10,7 +10,7 @@ interface PendingMember {
   checked: boolean;
 }
 
-// Owner-only: no self-serve join and no way to browse users outside your own org, so this is the only path onto an org's roster — see functions/actions/add-org-members.ts.
+// Owner-only. There's exactly one owner per org, set once at creation — this panel can only add/change/remove editor and viewer members, never owner.
 export default function MembersPanel({ orgId, currentUserId }: { orgId: string; currentUserId?: string }) {
   const { data, loading, refetch } = useQuery(ORG_MEMBERS, { variables: { org_id: orgId } });
   const [addMembers, { loading: adding }] = useMutation(ADD_ORG_MEMBERS);
@@ -79,16 +79,22 @@ export default function MembersPanel({ orgId, currentUserId }: { orgId: string; 
                 <div className="muted">{m.user?.email}</div>
               </div>
               <div className="row">
-                <select value={m.role} onChange={(e) => onChangeRole(m.id, e.target.value)} disabled={m.user_id === currentUserId}>
-                  {ROLES.map((r) => (
-                    <option key={r} value={r}>
-                      {r}
-                    </option>
-                  ))}
-                </select>
-                <button className="danger" onClick={() => onRemove(m.id)} disabled={m.user_id === currentUserId}>
-                  remove
-                </button>
+                {m.role === "owner" ? (
+                  <span className="badge owner">owner</span>
+                ) : (
+                  <>
+                    <select value={m.role} onChange={(e) => onChangeRole(m.id, e.target.value)} disabled={m.user_id === currentUserId}>
+                      {ROLES.map((r) => (
+                        <option key={r} value={r}>
+                          {r}
+                        </option>
+                      ))}
+                    </select>
+                    <button className="danger" onClick={() => onRemove(m.id)} disabled={m.user_id === currentUserId}>
+                      remove
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>

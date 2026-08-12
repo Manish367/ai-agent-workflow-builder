@@ -22,6 +22,17 @@ export const CREATE_ORGANIZATION = gql`
   }
 `;
 
+export const ORG_OWNER = gql`
+  query OrgOwner($org_id: uuid!) {
+    org_members(where: { org_id: { _eq: $org_id }, role: { _eq: owner } }, limit: 1) {
+      user {
+        email
+        display_name
+      }
+    }
+  }
+`;
+
 export const ORG_STATS = gql`
   query OrgStats($org_id: uuid!) {
     organizations_by_pk(id: $org_id) {

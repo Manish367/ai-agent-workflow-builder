@@ -6,6 +6,7 @@ import { useAuthenticationStatus, useUserData } from "@nhost/react";
 import { MY_ORGS, ORG_WORKFLOWS, CREATE_WORKFLOW, SIMULATE_EXTERNAL_EVENT, CREATE_ORGANIZATION } from "@/graphql/queries";
 import QuotaIndicator from "@/components/QuotaIndicator";
 import MembersPanel from "@/components/MembersPanel";
+import OrgOwnerBadge from "@/components/OrgOwnerBadge";
 import Shell from "@/components/Shell";
 
 export default function Dashboard() {
@@ -127,6 +128,7 @@ export default function Dashboard() {
                   ))}
                 </select>
                 {myRole && <span className={`badge ${myRole}`}>{myRole}</span>}
+                {orgId && <OrgOwnerBadge orgId={orgId} />}
                 <button className="ghost" onClick={() => setShowNewOrgForm((v) => !v)}>
                   + New org
                 </button>

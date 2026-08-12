@@ -31,6 +31,10 @@ select_permissions:
             user_id:
               _eq: X-Hasura-User-Id
 
+# Nobody can insert/update/delete an "owner" role row through this table directly —
+# the "role: {_neq: owner}" clause below blocks it even if a raw API call tries to
+# bypass the frontend. Owner is set exactly once, at org creation (createOrganization,
+# admin secret) — there's no way to grant, change, or revoke it afterward.
 insert_permissions:
   - role: user
     permission:
@@ -39,13 +43,16 @@ insert_permissions:
         - user_id
         - role
       check:
-        organization:
-          members:
-            _and:
-              - user_id:
-                  _eq: X-Hasura-User-Id
-              - role:
-                  _eq: owner
+        _and:
+          - role:
+              _neq: owner
+          - organization:
+              members:
+                _and:
+                  - user_id:
+                      _eq: X-Hasura-User-Id
+                  - role:
+                      _eq: owner
 
 update_permissions:
   - role: user
@@ -53,23 +60,31 @@ update_permissions:
       columns:
         - role
       filter:
-        organization:
-          members:
-            _and:
-              - user_id:
-                  _eq: X-Hasura-User-Id
-              - role:
-                  _eq: owner
-      check: null
+        _and:
+          - role:
+              _neq: owner
+          - organization:
+              members:
+                _and:
+                  - user_id:
+                      _eq: X-Hasura-User-Id
+                  - role:
+                      _eq: owner
+      check:
+        role:
+          _neq: owner
 
 delete_permissions:
   - role: user
     permission:
       filter:
-        organization:
-          members:
-            _and:
-              - user_id:
-                  _eq: X-Hasura-User-Id
-              - role:
-                  _eq: owner
+        _and:
+          - role:
+              _neq: owner
+          - organization:
+              members:
+                _and:
+                  - user_id:
+                      _eq: X-Hasura-User-Id
+                  - role:
+                      _eq: owner
