@@ -5,6 +5,7 @@ import { useMutation, useQuery } from "@apollo/client";
 import { useAuthenticationStatus, useUserData } from "@nhost/react";
 import { MY_ORGS, ORG_WORKFLOWS, CREATE_WORKFLOW, SIMULATE_EXTERNAL_EVENT } from "@/graphql/queries";
 import QuotaIndicator from "@/components/QuotaIndicator";
+import MembersPanel from "@/components/MembersPanel";
 import Shell from "@/components/Shell";
 
 export default function Dashboard() {
@@ -162,6 +163,12 @@ export default function Dashboard() {
             })}
             {wfData?.workflows.length === 0 && <p className="muted">No workflows yet.</p>}
           </div>
+
+          {myRole === "owner" && orgId && (
+            <div style={{ marginTop: 18 }}>
+              <MembersPanel orgId={orgId} currentUserId={user?.id} />
+            </div>
+          )}
         </>
       )}
     </Shell>

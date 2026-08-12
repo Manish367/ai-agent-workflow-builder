@@ -35,12 +35,27 @@ actions:
     permissions:
       - role: public
 
+  - name: addOrgMembers
+    definition:
+      kind: synchronous
+      handler: "{{ACTIONS_BASE_URL}}/actions/add-org-members"
+      forward_client_headers: true
+      headers:
+        - name: x-action-secret
+          value_from_env: ACTION_SECRET
+      timeout: 60
+    permissions:
+      - role: user
+
 custom_types:
   enums: []
-  input_objects: []
+  input_objects:
+    - name: OrgMemberInput
   scalars:
     - name: uuid
   objects:
     - name: TriggerWorkflowRunOutput
     - name: ApproveStepOutput
     - name: WebhookTriggerRunOutput
+    - name: AddOrgMemberResult
+    - name: AddOrgMembersOutput

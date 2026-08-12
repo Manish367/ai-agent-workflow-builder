@@ -211,15 +211,45 @@ export const WORKFLOW_DETAIL = gql`
 
 export const ORG_MEMBERS = gql`
   query OrgMembers($org_id: uuid!) {
-    org_members(where: { org_id: { _eq: $org_id } }) {
+    org_members(where: { org_id: { _eq: $org_id } }, order_by: { created_at: asc }) {
       id
       user_id
       role
       user {
         id
         email
-        displayName
+        display_name
       }
+    }
+  }
+`;
+
+export const ADD_ORG_MEMBERS = gql`
+  mutation AddOrgMembers($org_id: uuid!, $members: [OrgMemberInput!]!) {
+    addOrgMembers(org_id: $org_id, members: $members) {
+      results {
+        email
+        success
+        user_id
+        error
+      }
+    }
+  }
+`;
+
+export const UPDATE_MEMBER_ROLE = gql`
+  mutation UpdateMemberRole($id: uuid!, $role: org_role!) {
+    update_org_members_by_pk(pk_columns: { id: $id }, _set: { role: $role }) {
+      id
+      role
+    }
+  }
+`;
+
+export const REMOVE_MEMBER = gql`
+  mutation RemoveMember($id: uuid!) {
+    delete_org_members_by_pk(id: $id) {
+      id
     }
   }
 `;

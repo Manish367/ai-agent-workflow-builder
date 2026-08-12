@@ -179,3 +179,23 @@ mutation MarkExternalEventProcessed($id: uuid!) {
     id
   }
 }`;
+
+export const Q_USER_BY_EMAIL = `
+query UserByEmail($email: citext!) {
+  users(where: { email: { _eq: $email } }, limit: 1) {
+    id
+  }
+}`;
+
+export const M_UPSERT_ORG_MEMBER = `
+mutation UpsertOrgMember($org_id: uuid!, $user_id: uuid!, $role: org_role!) {
+  insert_org_members_one(
+    object: { org_id: $org_id, user_id: $user_id, role: $role }
+    on_conflict: { constraint: org_members_org_id_user_id_key, update_columns: [role] }
+  ) {
+    id
+    org_id
+    user_id
+    role
+  }
+}`;

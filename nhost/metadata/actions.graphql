@@ -16,6 +16,22 @@ type WebhookTriggerRunOutput {
   status: String!
 }
 
+input OrgMemberInput {
+  email: String!
+  role: String!
+}
+
+type AddOrgMemberResult {
+  email: String!
+  success: Boolean!
+  user_id: uuid
+  error: String
+}
+
+type AddOrgMembersOutput {
+  results: [AddOrgMemberResult!]!
+}
+
 type Mutation {
   # Owner/editor + quota check happen inside the handler, not as a Hasura permission.
   triggerWorkflowRun(workflow_id: uuid!): TriggerWorkflowRunOutput
@@ -25,4 +41,7 @@ type Mutation {
 
   # Unauthenticated (role: public) — external systems call this with the trigger's own secret instead of a user session.
   webhookTriggerRun(workflow_id: uuid!, secret: String!): WebhookTriggerRunOutput
+
+  # Owner-only; looks up each email against auth.users and upserts a role — the only path onto an org's roster since there's no self-serve join or user directory.
+  addOrgMembers(org_id: uuid!, members: [OrgMemberInput!]!): AddOrgMembersOutput
 }
