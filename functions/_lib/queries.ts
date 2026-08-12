@@ -180,6 +180,14 @@ mutation MarkExternalEventProcessed($id: uuid!) {
   }
 }`;
 
+export const M_INSERT_ORGANIZATION = `
+mutation InsertOrganization($name: String!) {
+  insert_organizations_one(object: { name: $name }) {
+    id
+    name
+  }
+}`;
+
 export const Q_USER_BY_EMAIL = `
 query UserByEmail($email: citext!) {
   auth_users(where: { email: { _eq: $email } }, limit: 1) {

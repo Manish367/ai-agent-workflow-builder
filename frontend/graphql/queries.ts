@@ -13,6 +13,15 @@ export const MY_ORGS = gql`
   }
 `;
 
+export const CREATE_ORGANIZATION = gql`
+  mutation CreateOrganization($name: String!) {
+    createOrganization(name: $name) {
+      org_id
+      org_name
+    }
+  }
+`;
+
 export const ORG_STATS = gql`
   query OrgStats($org_id: uuid!) {
     organizations_by_pk(id: $org_id) {

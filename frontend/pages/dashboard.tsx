@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useMutation, useQuery } from "@apollo/client";
 import { useAuthenticationStatus, useUserData } from "@nhost/react";
-import { MY_ORGS, ORG_WORKFLOWS, CREATE_WORKFLOW, SIMULATE_EXTERNAL_EVENT } from "@/graphql/queries";
+import { MY_ORGS, ORG_WORKFLOWS, CREATE_WORKFLOW, SIMULATE_EXTERNAL_EVENT, CREATE_ORGANIZATION } from "@/graphql/queries";
 import QuotaIndicator from "@/components/QuotaIndicator";
 import MembersPanel from "@/components/MembersPanel";
 import Shell from "@/components/Shell";
@@ -17,7 +17,7 @@ export default function Dashboard() {
     if (!authLoading && !isAuthenticated) router.replace("/login");
   }, [authLoading, isAuthenticated, router]);
 
-  const { data: orgsData, loading: orgsLoading } = useQuery(MY_ORGS, {
+  const { data: orgsData, loading: orgsLoading, refetch: refetchOrgs } = useQuery(MY_ORGS, {
     variables: { user_id: user?.id },
     skip: !user?.id,
   });
@@ -42,7 +42,10 @@ export default function Dashboard() {
 
   const [createWorkflow, { loading: creating }] = useMutation(CREATE_WORKFLOW);
   const [simulateEvent, { loading: simulating }] = useMutation(SIMULATE_EXTERNAL_EVENT);
+  const [createOrg, { loading: creatingOrg }] = useMutation(CREATE_ORGANIZATION);
   const [newName, setNewName] = useState("");
+  const [newOrgName, setNewOrgName] = useState("");
+  const [showNewOrgForm, setShowNewOrgForm] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
@@ -59,6 +62,17 @@ export default function Dashboard() {
     await refetch();
     const id = res.data?.insert_workflows_one?.id;
     if (id) router.push(`/workflows/${id}`);
+  }
+
+  async function onCreateOrg(e: FormEvent) {
+    e.preventDefault();
+    if (!newOrgName.trim()) return;
+    const res = await createOrg({ variables: { name: newOrgName } });
+    setNewOrgName("");
+    setShowNewOrgForm(false);
+    await refetchOrgs();
+    const id = res.data?.createOrganization?.org_id;
+    if (id) setOrgId(id);
   }
 
   async function onSimulateEvent() {
@@ -86,7 +100,18 @@ export default function Dashboard() {
       {memberships.length === 0 ? (
         <div className="card">
           <p>You&rsquo;re not a member of any organization yet.</p>
-          <p className="muted">Have an org owner add you via org_members, or apply the demo seed (see README).</p>
+          <p className="muted">Create your own — you&rsquo;ll be its owner — or have an existing owner add you by email.</p>
+          <form onSubmit={onCreateOrg} className="row" style={{ marginTop: 12 }}>
+            <input
+              placeholder="Organization name"
+              value={newOrgName}
+              onChange={(e) => setNewOrgName(e.target.value)}
+              style={{ flex: 1 }}
+            />
+            <button className="primary" type="submit" disabled={creatingOrg || !newOrgName.trim()}>
+              {creatingOrg ? <span className="spinner" /> : "+ Create organization"}
+            </button>
+          </form>
         </div>
       ) : (
         <>
@@ -102,11 +127,28 @@ export default function Dashboard() {
                   ))}
                 </select>
                 {myRole && <span className={`badge ${myRole}`}>{myRole}</span>}
+                <button className="ghost" onClick={() => setShowNewOrgForm((v) => !v)}>
+                  + New org
+                </button>
               </div>
               <button onClick={onSimulateEvent} disabled={simulating} title="Insert a row into external_events to fire database_event triggers">
                 {simulating ? <span className="spinner" /> : "⚡ Simulate external event"}
               </button>
             </div>
+            {showNewOrgForm && (
+              <form onSubmit={onCreateOrg} className="row" style={{ marginTop: 12 }}>
+                <input
+                  placeholder="Organization name"
+                  value={newOrgName}
+                  onChange={(e) => setNewOrgName(e.target.value)}
+                  style={{ flex: 1 }}
+                  autoFocus
+                />
+                <button className="primary" type="submit" disabled={creatingOrg || !newOrgName.trim()}>
+                  {creatingOrg ? <span className="spinner" /> : "Create"}
+                </button>
+              </form>
+            )}
             {orgId && (
               <div style={{ marginTop: 14 }}>
                 <QuotaIndicator orgId={orgId} />

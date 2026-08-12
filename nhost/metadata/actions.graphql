@@ -32,6 +32,11 @@ type AddOrgMembersOutput {
   results: [AddOrgMemberResult!]!
 }
 
+type CreateOrganizationOutput {
+  org_id: uuid!
+  org_name: String!
+}
+
 type Mutation {
   # Owner/editor + quota check happen inside the handler, not as a Hasura permission.
   triggerWorkflowRun(workflow_id: uuid!): TriggerWorkflowRunOutput
@@ -44,4 +49,7 @@ type Mutation {
 
   # Owner-only; looks up each email against auth.users and upserts a role — the only path onto an org's roster since there's no self-serve join or user directory.
   addOrgMembers(org_id: uuid!, members: [OrgMemberInput!]!): AddOrgMembersOutput
+
+  # Any signed-up user can call this and becomes the new org's owner — organizations/org_members have no insert permission for role "user", so this is the only path onto the platform for someone nobody has invited yet.
+  createOrganization(name: String!): CreateOrganizationOutput
 }

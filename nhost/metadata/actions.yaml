@@ -47,6 +47,18 @@ actions:
     permissions:
       - role: user
 
+  - name: createOrganization
+    definition:
+      kind: synchronous
+      handler: "{{ACTIONS_BASE_URL}}/actions/create-organization"
+      forward_client_headers: true
+      headers:
+        - name: x-action-secret
+          value_from_env: ACTION_SECRET
+      timeout: 60
+    permissions:
+      - role: user
+
 custom_types:
   enums: []
   input_objects:
@@ -59,3 +71,4 @@ custom_types:
     - name: WebhookTriggerRunOutput
     - name: AddOrgMemberResult
     - name: AddOrgMembersOutput
+    - name: CreateOrganizationOutput
