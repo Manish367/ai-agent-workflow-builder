@@ -76,11 +76,30 @@ export default function WorkflowPage() {
     }
   }
 
-  if (loading || !workflow) {
+  if (loading) {
     return (
       <Shell>
         <div className="row" style={{ marginTop: 60, justifyContent: "center" }}>
           <span className="spinner" />
+        </div>
+      </Shell>
+    );
+  }
+
+  if (!workflow) {
+    // Hasura returns null here (not an error) for a workflow outside your org's
+    // membership — this is the cross-org isolation actually working, not a bug.
+    return (
+      <Shell>
+        <Link href="/dashboard" className="muted">
+          ← back
+        </Link>
+        <div className="card" style={{ marginTop: 12 }}>
+          <h2>Not found</h2>
+          <p className="muted">
+            This workflow doesn&rsquo;t exist, or you&rsquo;re not a member of the organization it
+            belongs to.
+          </p>
         </div>
       </Shell>
     );
