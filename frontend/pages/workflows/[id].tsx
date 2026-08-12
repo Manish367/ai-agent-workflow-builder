@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import { useMutation, useQuery } from "@apollo/client";
 import { useAuthenticationStatus, useUserData } from "@nhost/react";
-import { WORKFLOW_DETAIL, MY_ROLE_IN_ORG, TRIGGER_RUN, DELETE_STEP, UPDATE_STEP_ORDER } from "@/graphql/queries";
+import { WORKFLOW_DETAIL, MY_ROLE_IN_ORG, TRIGGER_RUN, DELETE_STEP, UPDATE_STEP_ORDER, DELETE_TRIGGER } from "@/graphql/queries";
 import StepForm from "@/components/StepForm";
 import TriggerForm from "@/components/TriggerForm";
 import RunStatusPanel from "@/components/RunStatusPanel";
@@ -39,6 +39,7 @@ export default function WorkflowPage() {
 
   const [triggerRun, { loading: running, error: runError }] = useMutation(TRIGGER_RUN);
   const [deleteStep] = useMutation(DELETE_STEP);
+  const [deleteTrigger] = useMutation(DELETE_TRIGGER);
   const [updateStepOrder] = useMutation(UPDATE_STEP_ORDER);
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const [reordering, setReordering] = useState<string | null>(null);
@@ -57,6 +58,11 @@ export default function WorkflowPage() {
 
   async function onDeleteStep(stepId: string) {
     await deleteStep({ variables: { id: stepId } });
+    await refetch();
+  }
+
+  async function onDeleteTrigger(triggerId: string) {
+    await deleteTrigger({ variables: { id: triggerId } });
     await refetch();
   }
 
@@ -176,7 +182,14 @@ export default function WorkflowPage() {
             <div key={t.id} className="step-item" style={{ animationDelay: `${i * 40}ms` }}>
               <div className="row space-between">
                 <strong>{t.type}</strong>
-                <span className="muted">{t.enabled ? "enabled" : "disabled"}</span>
+                <div className="row">
+                  <span className="muted">{t.enabled ? "enabled" : "disabled"}</span>
+                  {myRole !== "viewer" && (
+                    <button className="danger" onClick={() => onDeleteTrigger(t.id)}>
+                      remove
+                    </button>
+                  )}
+                </div>
               </div>
               <pre>{JSON.stringify(t.config, null, 2)}</pre>
             </div>

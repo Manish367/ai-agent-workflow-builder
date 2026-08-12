@@ -96,6 +96,14 @@ export const UPDATE_STEP_ORDER = gql`
   }
 `;
 
+export const DELETE_TRIGGER = gql`
+  mutation DeleteTrigger($id: uuid!) {
+    delete_workflow_triggers_by_pk(id: $id) {
+      id
+    }
+  }
+`;
+
 export const DELETE_STEP = gql`
   mutation DeleteStep($id: uuid!) {
     delete_workflow_steps_by_pk(id: $id) {
