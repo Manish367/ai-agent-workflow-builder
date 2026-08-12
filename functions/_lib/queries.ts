@@ -182,7 +182,7 @@ mutation MarkExternalEventProcessed($id: uuid!) {
 
 export const Q_USER_BY_EMAIL = `
 query UserByEmail($email: citext!) {
-  users(where: { email: { _eq: $email } }, limit: 1) {
+  auth_users(where: { email: { _eq: $email } }, limit: 1) {
     id
   }
 }`;

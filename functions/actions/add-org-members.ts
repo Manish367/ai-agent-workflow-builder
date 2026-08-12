@@ -29,8 +29,8 @@ export default wrap(async (req: Request, res: Response) => {
   const results: MemberResult[] = [];
   for (const member of members) {
     try {
-      const userData = await gqlAdmin<{ users: { id: string }[] }>(Q_USER_BY_EMAIL, { email: member.email });
-      const user = userData.users[0];
+      const userData = await gqlAdmin<{ auth_users: { id: string }[] }>(Q_USER_BY_EMAIL, { email: member.email });
+      const user = userData.auth_users[0];
       if (!user) {
         results.push({ email: member.email, success: false, user_id: null, error: "No account with this email has signed up yet" });
         continue;
