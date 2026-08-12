@@ -2,7 +2,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useMutation, useQuery } from "@apollo/client";
-import { useAuthenticationStatus, useUserData, useSignOut } from "@nhost/react";
+import { useAuthenticationStatus, useUserData } from "@nhost/react";
 import { MY_ORGS, ORG_WORKFLOWS, CREATE_WORKFLOW, SIMULATE_EXTERNAL_EVENT } from "@/graphql/queries";
 import QuotaIndicator from "@/components/QuotaIndicator";
 import Shell from "@/components/Shell";
@@ -11,7 +11,6 @@ export default function Dashboard() {
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuthenticationStatus();
   const user = useUserData();
-  const { signOut } = useSignOut();
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) router.replace("/login");
@@ -78,10 +77,9 @@ export default function Dashboard() {
   }
 
   return (
-    <Shell right={<span className="muted">{user?.email}</span>}>
+    <Shell>
       <div className="row space-between">
         <h1>Workflows</h1>
-        <button onClick={() => signOut()}>Sign out</button>
       </div>
 
       {memberships.length === 0 ? (
