@@ -4,6 +4,8 @@ A mini n8n for chaining AI agent steps, built on nhost (Postgres + Hasura + Auth
 Next.js frontend. Organizations, role-scoped permissions at two layers, workflow
 steps/triggers, and a Hasura Action-driven execution engine with live subscriptions.
 
+**Live app:** https://ai-agent-workflow-builder-xi.vercel.app
+
 > **Environment note:** this was authored without Docker available, so instead of
 > local `nhost up` it was applied straight to an **nhost cloud** project — the
 > standalone [Hasura CLI](https://hasura.io/docs/latest/hasura-cli/overview/) (no
