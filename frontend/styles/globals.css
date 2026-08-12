@@ -87,7 +87,7 @@ code {
   border-radius: 4px;
 }
 
-/* ---------------------------------------------------------------- layout */
+/* layout */
 
 .topbar {
   position: sticky;
@@ -130,7 +130,7 @@ code {
   padding: 28px 24px 80px;
 }
 
-/* ---------------------------------------------------------------- motion */
+/* motion */
 
 @keyframes fadeInUp {
   from {
@@ -193,7 +193,7 @@ code {
   }
 }
 
-/* ---------------------------------------------------------------- buttons */
+/* buttons */
 
 button {
   font-family: inherit;
@@ -263,7 +263,7 @@ button.icon-btn {
   transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* ---------------------------------------------------------------- forms */
+/* forms */
 
 input,
 select,
@@ -290,7 +290,7 @@ textarea {
   font-family: "JetBrains Mono", monospace;
 }
 
-/* ---------------------------------------------------------------- cards */
+/* cards */
 
 .card {
   background: var(--card);
@@ -329,7 +329,7 @@ a.workflow-card {
   font-size: 13px;
 }
 
-/* ---------------------------------------------------------------- badges */
+/* badges */
 
 .badge {
   display: inline-flex;
@@ -385,7 +385,7 @@ a.workflow-card {
   color: var(--text-muted);
 }
 
-/* ---------------------------------------------------------------- quota */
+/* quota */
 
 .quota-bar {
   height: 9px;
@@ -407,7 +407,7 @@ a.workflow-card {
   background: linear-gradient(90deg, var(--danger), #b91c1c);
 }
 
-/* ---------------------------------------------------------------- steps */
+/* steps */
 
 .step-list {
   display: flex;
@@ -486,7 +486,7 @@ details summary {
   user-select: none;
 }
 
-/* ---------------------------------------------------------------- misc */
+/* misc */
 
 .spinner {
   width: 16px;

@@ -6,12 +6,7 @@ export class GraphQLError extends Error {
   }
 }
 
-// All engine writes/reads go through the admin secret. This is intentional: the
-// Hasura permissions in nhost/metadata give role "user" read-only access (and only
-// within their own org) to workflow_runs/step_runs/notifications/workflow_outputs —
-// there is no insert/update permission for those tables for anyone but admin. The
-// Action handler is the only writer, and it re-derives every permission decision
-// itself (see engine.ts) rather than relying on the bypassed row-level checks.
+// Engine writes/reads go through the admin secret since role "user" has no insert/update permission on these tables — engine.ts re-derives every permission decision itself instead.
 export async function gqlAdmin<T = any>(query: string, variables?: Record<string, unknown>): Promise<T> {
   const res = await fetch(env.hasuraGraphqlUrl(), {
     method: "POST",

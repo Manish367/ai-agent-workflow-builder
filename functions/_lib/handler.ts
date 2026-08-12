@@ -8,10 +8,7 @@ export interface ActionBody {
   session_variables: Record<string, string>;
 }
 
-// Every Action handler request carries this shared secret (configured as a static
-// header in nhost/metadata/actions.yaml). It's not user-facing auth — it just stops
-// someone from finding the function URL and invoking it directly, skipping Hasura
-// (and, more importantly, skipping the audit trail session_variables give us).
+// Not user-facing auth — just stops someone from invoking the function URL directly, bypassing Hasura and its session_variables audit trail.
 export function assertActionSecret(req: Request): void {
   if (req.header("x-action-secret") !== env.actionSecret()) {
     throw new HttpError(401, "Invalid action secret");

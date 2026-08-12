@@ -5,10 +5,7 @@ import { M_MARK_NOTIFICATION_SENT } from "../_lib/queries";
 import { env } from "../_lib/env";
 import { nowIso } from "../_lib/time";
 
-// Hasura Event Trigger webhook, fires on INSERT into `notifications`. This is the
-// `notify` step type's actual side effect — the engine only ever inserts the row
-// (see functions/_lib/engine.ts executeStep case "notify"); this decoupled handler
-// is what really posts to Slack (or logs a disclosed stub if no webhook is set).
+// Hasura Event Trigger webhook, fires on INSERT into notifications — the engine only inserts the row; this decoupled handler is what actually posts to Slack (or stubs to console).
 export default wrap(async (req: Request, res: Response) => {
   assertEventSecret(req);
   const row = req.body.event.data.new as { id: string; channel: string; message: string };

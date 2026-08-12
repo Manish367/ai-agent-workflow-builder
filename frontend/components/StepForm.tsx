@@ -13,9 +13,7 @@ const CONFIG_PLACEHOLDERS: Record<string, string> = {
   approval_gate: "{}",
 };
 
-// Sensitive types (db_write / notify) are owner-only — enforced server-side by the
-// Layer 2 Hasura permission on workflow_steps, this UI just avoids offering an
-// insert that would be rejected.
+// db_write/notify are owner-only — enforced server-side; this UI just avoids offering an insert that would be rejected.
 export default function StepForm({
   workflowId,
   nextOrder,

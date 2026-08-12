@@ -17,18 +17,12 @@ type WebhookTriggerRunOutput {
 }
 
 type Mutation {
-  # Layer 1 (owner/editor in the workflow's org) + quota check happen inside the
-  # handler, not as a Hasura permission — see functions/actions/trigger-workflow-run.ts
+  # Owner/editor + quota check happen inside the handler, not as a Hasura permission.
   triggerWorkflowRun(workflow_id: uuid!): TriggerWorkflowRunOutput
 
-  # Resumes a paused approval_gate step. The role check ("is this caller an
-  # owner/editor in the run's org") happens inside the handler because it's a
-  # state-transition + side-effecting decision (resume execution), not a row read/
-  # write a static Hasura permission could express. See functions/actions/approve-step.ts
+  # Resumes a paused approval_gate step; role check happens in the handler since it's a state transition, not a static row permission.
   approveStep(step_run_id: uuid!, approve: Boolean!): ApproveStepOutput
 
-  # Inbound webhook trigger endpoint. Unauthenticated (role: public) — external
-  # systems call this with the workflow's own per-trigger secret instead of a user
-  # session. See functions/actions/webhook-trigger-run.ts
+  # Unauthenticated (role: public) — external systems call this with the trigger's own secret instead of a user session.
   webhookTriggerRun(workflow_id: uuid!, secret: String!): WebhookTriggerRunOutput
 }

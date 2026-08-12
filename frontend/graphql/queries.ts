@@ -131,9 +131,7 @@ export const APPROVE_STEP = gql`
   }
 `;
 
-// A GraphQL subscription may only have one root field, so the run's own status
-// rides along on the (already-defined) workflow_run relationship instead of a
-// second root-level workflow_runs_by_pk field.
+// A subscription may only have one root field, so run status rides along on the workflow_run relationship instead of a second root field.
 export const STEP_RUN_PROGRESS = gql`
   subscription StepRunProgress($workflow_run_id: uuid!) {
     step_runs(where: { workflow_run_id: { _eq: $workflow_run_id } }, order_by: { created_at: asc }) {

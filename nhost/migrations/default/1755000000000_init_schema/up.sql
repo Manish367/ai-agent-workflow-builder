@@ -1,21 +1,12 @@
--- AI Agent Workflow Builder — initial schema
--- Runs against the nhost/Hasura Postgres database. `auth.users` is managed by nhost Auth.
+-- AI Agent Workflow Builder — initial schema. auth.users is managed by nhost Auth.
 
 create extension if not exists pgcrypto;
-
--- ============================================================================
--- Enums
--- ============================================================================
 
 create type public.org_role as enum ('owner', 'editor', 'viewer');
 create type public.step_type as enum ('llm_call', 'http_request', 'db_write', 'notify', 'conditional_branch', 'approval_gate');
 create type public.trigger_type as enum ('manual', 'webhook', 'scheduled', 'database_event');
 create type public.run_status as enum ('pending', 'running', 'paused', 'completed', 'failed', 'cancelled');
 create type public.step_run_status as enum ('pending', 'running', 'succeeded', 'failed', 'paused', 'skipped');
-
--- ============================================================================
--- Core tables
--- ============================================================================
 
 create table public.organizations (
   id uuid primary key default gen_random_uuid(),
@@ -140,9 +131,7 @@ create table public.notifications (
 );
 create index notifications_org_id_idx on public.notifications(org_id);
 
--- simulated "watched table" for the database_event trigger type: a row inserted here
--- (by an external system, or manually in the demo UI) fires a Hasura Event Trigger
--- that starts any workflow whose trigger config watches this table for this org.
+-- watched table for the database_event trigger type — a row inserted here fires a Hasura Event Trigger.
 create table public.external_events (
   id uuid primary key default gen_random_uuid(),
   org_id uuid not null references public.organizations(id) on delete cascade,
@@ -152,10 +141,6 @@ create table public.external_events (
   created_at timestamptz not null default now()
 );
 create index external_events_org_id_idx on public.external_events(org_id);
-
--- ============================================================================
--- Aggregation: org-level usage + average run duration, as a Postgres view
--- ============================================================================
 
 create view public.organization_stats as
 select
@@ -169,10 +154,6 @@ select
 from public.organizations o
 left join public.workflow_runs wr on wr.org_id = o.id
 group by o.id;
-
--- ============================================================================
--- Integrity triggers
--- ============================================================================
 
 -- keep updated_at fresh
 create or replace function public.set_updated_at()
@@ -194,9 +175,7 @@ create trigger set_updated_at before update on public.workflow_triggers
 create trigger set_updated_at before update on public.step_runs
   for each row execute function public.set_updated_at();
 
--- org_id is never trusted from client input: it is always derived server-side from
--- the parent row, then locked so it can never be changed on update. This is the
--- backstop under the Hasura permission checks for cross-org isolation.
+-- org_id is always derived server-side from the parent row, then locked against updates — the backstop under the Hasura permission checks.
 create or replace function public.derive_org_from_workflow()
 returns trigger as $$
 begin

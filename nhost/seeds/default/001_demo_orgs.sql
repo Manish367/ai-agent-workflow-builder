@@ -1,12 +1,4 @@
--- Demo seed for the Final Task scenario: two orgs, each with an owner/editor/viewer.
---
--- Run this AFTER the four demo users below have signed up once through the frontend
--- (nhost Auth needs to create the auth.users rows itself). Replace the emails if you
--- used different ones. Then apply with:
---
---   hasura seed apply --database-name default
---
--- or paste it into the Hasura Console's SQL tab.
+-- Demo seed: two orgs with an owner/editor/viewer each. Run after the emails below sign up through the frontend, then `hasura seed apply --database-name default`.
 
 insert into public.organizations (name, quota_calls_allowed)
 values ('Org A', 1000), ('Org B', 1000)

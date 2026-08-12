@@ -4,12 +4,7 @@ import { gqlAdmin } from "../_lib/db";
 import { HttpError, startWorkflowRun } from "../_lib/engine";
 import { Q_WORKFLOW_TRIGGER_BY_SECRET } from "../_lib/queries";
 
-// Hasura Action: webhookTriggerRun(workflow_id: uuid!, secret: String!)
-// role: public — this is the inbound endpoint external systems call. There is no
-// user session here, so authorization is entirely: does a `webhook` type trigger
-// exist for this workflow whose stored config.secret matches what was posted?
-// (Recall only an owner can attach a webhook trigger in the first place — Layer 2 on
-// workflow_triggers — so the secret's existence already implies an authorized org.)
+// Hasura Action: webhookTriggerRun(workflow_id: uuid!, secret: String!) — role: public; auth is entirely "does an enabled webhook trigger for this workflow have a matching config.secret" (only an owner could have attached one, per the Layer 2 permission on workflow_triggers).
 export default wrap(async (req: Request, res: Response) => {
   assertActionSecret(req);
   const { workflow_id, secret } = req.body.input;

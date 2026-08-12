@@ -1,5 +1,4 @@
-# One Postgres source: the nhost-managed database. `hasura metadata apply` fills in
-# the connection string from the NHOST/HASURA env at deploy time — nothing secret here.
+# One Postgres source: the nhost-managed database.
 - name: default
   kind: postgres
   configuration:

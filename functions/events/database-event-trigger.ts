@@ -4,10 +4,7 @@ import { gqlAdmin } from "../_lib/db";
 import { startWorkflowRun } from "../_lib/engine";
 import { Q_DATABASE_EVENT_TRIGGERS, M_MARK_EXTERNAL_EVENT_PROCESSED } from "../_lib/queries";
 
-// Hasura Event Trigger webhook, fires on INSERT into `external_events` — the
-// `database_event` workflow-trigger type. A row landing in this "watched table"
-// (from a real external system, or the demo UI's "simulate external event" button)
-// auto-starts every enabled database_event trigger in the same org.
+// Hasura Event Trigger webhook, fires on INSERT into external_events — auto-starts every enabled database_event trigger in the same org.
 export default wrap(async (req: Request, res: Response) => {
   assertEventSecret(req);
   const row = req.body.event.data.new as { id: string; org_id: string };

@@ -10,9 +10,7 @@ object_relationships:
     using:
       foreign_key_constraint_on: org_id
 
-# Same Layer1+Layer2 pattern as workflow_steps: a `webhook` trigger is the sensitive
-# type here (it's an inbound endpoint external systems can call), so only an owner
-# may attach one. `manual`/`scheduled`/`database_event` triggers are owner or editor.
+# Same Layer1+Layer2 pattern as workflow_steps: webhook (an inbound endpoint) needs owner; other trigger types need owner or editor.
 select_permissions:
   - role: user
     permission:

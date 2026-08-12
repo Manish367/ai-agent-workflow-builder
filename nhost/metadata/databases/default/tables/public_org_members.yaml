@@ -15,10 +15,7 @@ object_relationships:
         column_mapping:
           user_id: id
 
-# Layer 1: any member of an org can see the org's member/role list (needed for the
-# UI to show who has what role). Only an existing owner of that same org can add,
-# change the role of, or remove a member — self-referential check through the
-# `organization.members` relationship, so this can never cross into another org.
+# Any org member can see the member/role list; only an existing owner can add/change/remove one, via a self-referential check that can never cross into another org.
 select_permissions:
   - role: user
     permission:

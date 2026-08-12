@@ -12,8 +12,7 @@ object_relationships:
         column_mapping:
           org_id: id
 
-# Read-only aggregation view (avg run duration + runs this month), scoped the same
-# way as everything else: only members of the org can read its own stats row.
+# Read-only aggregation view, scoped like everything else: only org members can read its own stats row.
 select_permissions:
   - role: user
     permission:

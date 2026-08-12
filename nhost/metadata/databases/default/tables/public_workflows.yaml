@@ -38,9 +38,7 @@ array_relationships:
           name: workflow_runs
           schema: public
 
-# Layer 1 only here — workflows themselves aren't a "sensitive step type", so plain
-# org+role scoping is enough. `runs(order_by: {created_at: desc}, limit: 1)` in the
-# query is how the frontend gets "most recent run status" without extra metadata.
+# Layer 1 only — workflows aren't a sensitive step type, so plain org+role scoping is enough.
 select_permissions:
   - role: user
     permission:

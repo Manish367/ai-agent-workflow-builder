@@ -35,12 +35,7 @@ interface WorkflowStep {
   config: Record<string, any>;
 }
 
-// ---------------------------------------------------------------------------
-// Permission helpers — every entry point re-derives these itself. Nothing here
-// trusts a Hasura row permission having already filtered anything, because these
-// handlers run with the admin secret and bypass row permissions entirely.
-// ---------------------------------------------------------------------------
-
+// Every entry point re-derives these itself rather than trusting a Hasura permission, since these handlers run with the admin secret and bypass row permissions entirely.
 export async function getOrgRole(orgId: string, userId: string): Promise<OrgRole | null> {
   const data = await gqlAdmin<{ org_members: { role: OrgRole }[] }>(Q_ORG_MEMBER_ROLE, {
     org_id: orgId,
@@ -56,10 +51,6 @@ export async function requireOrgRole(orgId: string, userId: string, allowed: Org
   }
   return role;
 }
-
-// ---------------------------------------------------------------------------
-// Quota
-// ---------------------------------------------------------------------------
 
 function currentMonthStart(): string {
   const d = new Date();
@@ -94,14 +85,10 @@ async function incrementQuota(orgId: string, by: number): Promise<void> {
   await gqlAdmin(M_INCREMENT_QUOTA, { id: orgId, by });
 }
 
-// ---------------------------------------------------------------------------
-// Starting a run
-// ---------------------------------------------------------------------------
-
 export async function startWorkflowRun(opts: {
   workflowId: string;
   triggerType: "manual" | "webhook" | "scheduled" | "database_event";
-  callerUserId: string | null; // present for manual (session user); null for system-initiated triggers
+  callerUserId: string | null; // null for system-initiated triggers
 }): Promise<{ runId: string; status: string }> {
   const { workflowId, triggerType, callerUserId } = opts;
 
@@ -112,17 +99,12 @@ export async function startWorkflowRun(opts: {
   if (!wf.workflows_by_pk) throw new HttpError(404, "Workflow not found");
   const orgId = wf.workflows_by_pk.org_id;
 
-  // Step 1 of the spec: verify caller is owner/editor in the workflow's org. Only
-  // applies to human-initiated (manual) runs — webhook/scheduled/database_event runs
-  // are pre-authorized by the fact that only an owner/editor could have created that
-  // trigger in the first place (enforced by the Layer 2 Hasura permission on
-  // workflow_triggers), and webhook additionally requires its own per-trigger secret.
+  // Only manual runs need a caller role check; webhook/scheduled/database_event triggers are pre-authorized by the Layer 2 permission that gated creating that trigger in the first place.
   if (triggerType === "manual") {
     if (!callerUserId) throw new HttpError(401, "Missing caller identity for a manual run");
     await requireOrgRole(orgId, callerUserId, ["owner", "editor"]);
   }
 
-  // Step 2: quota check, before we spend anything creating a run.
   await assertQuotaAvailable(orgId);
 
   const inserted = await gqlAdmin<{ insert_workflow_runs_one: { id: string } }>(M_INSERT_WORKFLOW_RUN, {
@@ -136,10 +118,6 @@ export async function startWorkflowRun(opts: {
   return { runId, status: finalStatus };
 }
 
-// ---------------------------------------------------------------------------
-// Executing / resuming a run
-// ---------------------------------------------------------------------------
-
 interface ExistingStepRun {
   id: string;
   workflow_step_id: string;
@@ -147,10 +125,7 @@ interface ExistingStepRun {
   output: unknown;
 }
 
-// Re-derives all state from the DB every time it's called, so it works identically
-// whether it's a brand-new run or a resume-after-approval: it walks the workflow's
-// steps in order, skips anything that already has a terminal step_run (succeeded /
-// skipped / failed), and picks up execution at the first step that doesn't.
+// Re-derives state from the DB on every call, so a fresh run and a resume-after-approval are the same code path.
 export async function runWorkflow(runId: string): Promise<string> {
   const runData = await gqlAdmin<{ workflow_runs_by_pk: { id: string; workflow_id: string; org_id: string; status: string } | null }>(
     Q_WORKFLOW_RUN,
@@ -158,7 +133,7 @@ export async function runWorkflow(runId: string): Promise<string> {
   );
   const run = runData.workflow_runs_by_pk;
   if (!run) throw new HttpError(404, "workflow_run not found");
-  if (run.status === "paused") return run.status; // idempotency guard, see approve-step.ts
+  if (run.status === "paused") return run.status; // idempotency guard against a concurrent resume
   if (run.status === "completed" || run.status === "failed" || run.status === "cancelled") return run.status;
 
   if (run.status === "pending") {
@@ -173,9 +148,6 @@ export async function runWorkflow(runId: string): Promise<string> {
   const existingData = await gqlAdmin<{ step_runs: ExistingStepRun[] }>(Q_STEP_RUNS_FOR_RUN, { workflow_run_id: runId });
   const existingByStep = new Map(existingData.step_runs.map((sr) => [sr.workflow_step_id, sr]));
 
-  // Fold through already-completed steps to reconstruct `previousOutput` and the
-  // most recent conditional_branch result, so a resumed run behaves exactly like a
-  // fresh one that happened to pause partway through.
   let previousOutput: unknown = null;
   let lastBranch: boolean | null = null;
   let externalCallCount = 0;
@@ -192,8 +164,7 @@ export async function runWorkflow(runId: string): Promise<string> {
       continue;
     }
 
-    // run_if_branch lets a step declare it only runs when the most recent
-    // conditional_branch evaluated to true or false; steps without it always run.
+    // run_if_branch gates a step to only run when the most recent conditional_branch matched.
     const runIfBranch = step.config?.run_if_branch;
     if (typeof runIfBranch === "boolean" && lastBranch !== null && runIfBranch !== lastBranch) {
       await gqlAdmin(M_INSERT_STEP_RUN, {
@@ -221,7 +192,7 @@ export async function runWorkflow(runId: string): Promise<string> {
         await gqlAdmin(M_UPDATE_STEP_RUN, { id: stepRunId, set: { status: "paused" } });
         await gqlAdmin(M_UPDATE_WORKFLOW_RUN, { id: runId, set: { status: "paused" } });
         await incrementQuota(run.org_id, externalCallCount);
-        return "paused"; // execution stops here until approveStep resumes it
+        return "paused";
       }
 
       const result = await executeStep(step, { previous: previousOutput, runId, orgId: run.org_id, stepRunId });
@@ -249,10 +220,6 @@ export async function runWorkflow(runId: string): Promise<string> {
   await incrementQuota(run.org_id, externalCallCount);
   return "completed";
 }
-
-// ---------------------------------------------------------------------------
-// Step execution
-// ---------------------------------------------------------------------------
 
 async function withRetry<T>(attemptFn: () => Promise<T>, maxAttempts: number): Promise<{ value: T; attempts: number }> {
   let lastErr: unknown;
@@ -294,8 +261,7 @@ async function executeStep(
     case "notify": {
       const message = interpolate(step.config?.message ?? "Workflow notification", { previous: ctx.previous }) as string;
       const channel = step.config?.channel ?? "slack";
-      // Insert only — the actual send happens in the `notification_outbox` Event
-      // Trigger (see nhost/metadata/.../public_notifications.yaml + functions/events).
+      // Insert only — the actual send happens in the notification_outbox Event Trigger.
       await gqlAdmin(M_INSERT_NOTIFICATION, { workflow_run_id: ctx.runId, step_run_id: ctx.stepRunId, channel, message });
       return { output: { queued: true, channel, message }, attempts: 1, externalCall: false };
     }
@@ -319,9 +285,7 @@ function evaluateCondition(actual: unknown, operator: string, expected: unknown)
     case "not_equals":
       return actual !== expected;
     case "contains":
-      // Case-insensitive: real LLM output casing (e.g. "Urgent" vs "urgent") is
-      // never fully predictable, and this operator is meant for loose text
-      // matching, not exact comparison (use "equals" for that).
+      // Case-insensitive — real LLM output casing isn't predictable; use "equals" for exact matches.
       return (
         typeof actual === "string" &&
         typeof expected === "string" &&

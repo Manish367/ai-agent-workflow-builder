@@ -28,10 +28,7 @@ object_relationships:
         column_mapping:
           id: org_id
 
-# Layer 1: any member of the org (owner/editor/viewer) can see the org and its quota.
-# Only an owner can rename it. Quota columns are never in the update column list —
-# they are only ever mutated by the Action handler using the admin secret, so a user
-# can never inflate their own org's quota by editing it directly.
+# Any member can see the org and its quota; only an owner can rename it. Quota columns are never in the update column list, so only the Action handler (admin secret) can change them.
 select_permissions:
   - role: user
     permission:

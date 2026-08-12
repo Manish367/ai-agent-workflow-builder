@@ -2,11 +2,7 @@ import { useState } from "react";
 import { useMutation, useSubscription } from "@apollo/client";
 import { STEP_RUN_PROGRESS, APPROVE_STEP } from "@/graphql/queries";
 
-// Live, step-by-step progress for one run — no polling, no refresh. This is the
-// subscription the Final Task scenario depends on: it's filtered to a single
-// workflow_run_id, and cross-org isolation for it comes for free from the Hasura
-// select permission on step_runs (org-scoped) — there is no separate "subscription
-// permission" to configure.
+// Live, step-by-step progress for one run — no polling. Cross-org isolation comes for free from the org-scoped select permission on step_runs; there's no separate subscription permission to configure.
 export default function RunStatusPanel({ runId, myRole }: { runId: string; myRole?: string }) {
   const { data, loading } = useSubscription(STEP_RUN_PROGRESS, { variables: { workflow_run_id: runId } });
   const [approveStep, { loading: approving }] = useMutation(APPROVE_STEP);

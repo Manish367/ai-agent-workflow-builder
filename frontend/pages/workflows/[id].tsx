@@ -56,12 +56,7 @@ export default function WorkflowPage() {
     await refetch();
   }
 
-  // Deleting a step leaves a gap in step_order (e.g. 3, 6, 7) since remaining steps
-  // keep their old values -- harmless for execution (which just sorts ascending),
-  // but confusing to look at. Renumber everything back to a contiguous 1..N right
-  // after a delete. Two passes to avoid colliding with the (workflow_id, step_order)
-  // unique constraint: move everything to negative scratch values first, then to
-  // their final positions.
+  // Renumbers to a contiguous 1..N after a delete; two passes (negative scratch values, then final) to avoid the (workflow_id, step_order) unique constraint.
   async function renumberSteps(remainingSteps: { id: string }[]) {
     for (let i = 0; i < remainingSteps.length; i++) {
       await updateStepOrder({ variables: { id: remainingSteps[i].id, step_order: -(i + 1) } });
@@ -110,8 +105,7 @@ export default function WorkflowPage() {
   }
 
   if (!workflow) {
-    // Hasura returns null here (not an error) for a workflow outside your org's
-    // membership — this is the cross-org isolation actually working, not a bug.
+    // Hasura returns null (not an error) for a workflow outside your org — isolation working as intended.
     return (
       <Shell>
         <Link href="/dashboard" className="muted">

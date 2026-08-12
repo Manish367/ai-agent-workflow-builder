@@ -6,10 +6,7 @@ export interface LlmResult {
   stubbed: boolean;
 }
 
-// Real call for Groq / OpenRouter (both speak the OpenAI chat-completions shape) and
-// Gemini (its own shape). Falls back to a disclosed stub with an artificial delay
-// when no LLM_API_KEY is configured, per the assignment's explicit "stub is fine"
-// allowance.
+// Groq/OpenRouter speak the OpenAI chat-completions shape; Gemini has its own. Falls back to a disclosed stub with an artificial delay when no LLM_API_KEY is configured.
 export async function callLlm(prompt: string, config: Record<string, any> = {}): Promise<LlmResult> {
   const provider = env.llmProvider();
   const apiKey = env.llmApiKey();

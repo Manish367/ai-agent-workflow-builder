@@ -1,7 +1,4 @@
-// Minimal templating so step config can reference the previous step's output, e.g.
-// `{ "message": "LLM said: {{previous.text}}" }` or `{ "field": "previous.sentiment" }`.
-// Deliberately tiny (dot-path get + string interpolation) — not a general template
-// engine, just enough to wire one step's output into the next step's input.
+// Minimal templating so step config can reference the previous step's output, e.g. `{ "message": "LLM said: {{previous.text}}" }`.
 
 // Plain unwrapped path lookup: getPath(obj, "a.b.c") === obj.a.b.c
 export function getPath(obj: unknown, path: string): unknown {
@@ -11,8 +8,7 @@ export function getPath(obj: unknown, path: string): unknown {
 
 export function interpolate(value: unknown, context: { previous: unknown }): unknown {
   if (typeof value === "string") {
-    // Templates are written as {{previous.text}}, so resolve against `context`
-    // itself (which has a top-level "previous" key), not context.previous directly.
+    // Templates like {{previous.text}} resolve against context itself, not context.previous.
     const match = value.match(/^\{\{\s*([\w.]+)\s*\}\}$/);
     if (match) return getPath(context, match[1]);
     return value.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_, path) => {

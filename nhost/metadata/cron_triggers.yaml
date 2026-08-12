@@ -1,9 +1,4 @@
-# Hasura-native cron trigger backing the `scheduled` workflow-trigger type. Hasura
-# calls this webhook every 5 minutes; the function itself looks at each enabled
-# `workflow_triggers` row of type `scheduled`, parses its own cron expression out of
-# `config.cron`, and only starts a run for the ones actually due since
-# `config.last_run_at` — the fixed 5-minute cadence here is just the polling
-# resolution, not the per-workflow schedule.
+# Polls every 5 minutes; the function checks each scheduled trigger's own cron expression against config.last_run_at to decide what's actually due.
 - name: run_due_scheduled_workflows
   webhook: "{{ACTIONS_BASE_URL}}/scheduled/run-due-workflows"
   schedule: "*/5 * * * *"

@@ -13,8 +13,7 @@ object_relationships:
     using:
       foreign_key_constraint_on: step_run_id
 
-# Written only by db_write steps in the Action handler (admin secret). Read-only for
-# users, org-scoped like everything else.
+# Written only by db_write steps (admin secret); read-only for users, org-scoped.
 select_permissions:
   - role: user
     permission:

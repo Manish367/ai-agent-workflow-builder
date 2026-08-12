@@ -17,8 +17,7 @@ const CONFIG_PLACEHOLDERS: Record<string, () => string> = {
   database_event: () => JSON.stringify({ watched_table: "external_events" }, null, 2),
 };
 
-// `webhook` triggers are owner-only — enforced server-side by the Layer 2 Hasura
-// permission on workflow_triggers.
+// webhook triggers are owner-only — enforced server-side.
 export default function TriggerForm({
   workflowId,
   myRole,

@@ -1,7 +1,6 @@
 import { Html, Head, Main, NextScript } from "next/document";
 
-// Sets data-theme before first paint so there's no flash of the wrong theme —
-// ThemeProvider's own effect (which persists a user's toggle) runs after hydration.
+// Sets data-theme before first paint so there's no flash of the wrong theme.
 const setInitialTheme = `
 (function () {
   try {

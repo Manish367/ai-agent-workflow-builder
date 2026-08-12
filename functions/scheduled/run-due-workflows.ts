@@ -5,10 +5,7 @@ import { gqlAdmin } from "../_lib/db";
 import { startWorkflowRun } from "../_lib/engine";
 import { Q_SCHEDULED_TRIGGERS, M_UPDATE_TRIGGER_CONFIG } from "../_lib/queries";
 
-// Hasura Cron Trigger webhook (nhost/metadata/cron_triggers.yaml), polled every 5
-// minutes. That fixed cadence is just polling resolution — each `scheduled`
-// workflow_triggers row carries its own cron expression in config.cron, and this
-// only starts a run for the ones actually due since config.last_run_at.
+// Hasura Cron Trigger webhook, polled every 5 minutes — that's just polling resolution; each scheduled trigger carries its own cron expression and only starts a run once actually due.
 export default wrap(async (_req: Request, res: Response) => {
   assertEventSecret(_req);
 

@@ -11,11 +11,7 @@ array_relationships:
           name: org_members
           schema: public
 
-# auth.users is managed by nhost Auth, not this app — tracked here only so the
-# creator/approver/triggered_by_user/org_members.user relationships resolve. Kept
-# deliberately narrow: a caller can only see another user's id/display_name/email if
-# they share at least one org (via org_memberships -> organization -> members),
-# never a global user directory. That mirrors Layer 1 for every other table.
+# Tracked only so the creator/approver/user relationships resolve. Kept narrow: visible only to users sharing at least one org, never a global directory.
 select_permissions:
   - role: user
     permission:

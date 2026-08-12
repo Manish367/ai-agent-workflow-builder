@@ -21,12 +21,7 @@ object_relationships:
         column_mapping:
           approved_by: id
 
-# Same as workflow_runs: select-only for role "user". The subscription the frontend
-# uses for live per-step progress (filtered by workflow_run_id) reads through this
-# permission, so cross-org isolation holds for the subscription too, automatically —
-# a user simply cannot subscribe to rows outside orgs they belong to, no matter what
-# workflow_run_id they pass. Approving a paused approval_gate step goes through the
-# `approveStep` Action, never a direct update — see functions/actions/approve-step.ts.
+# Select-only for role "user" — this same permission gates the live subscription too, so cross-org isolation holds there automatically. Approving a paused step goes through the approveStep Action, never a direct update.
 select_permissions:
   - role: user
     permission:

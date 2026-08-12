@@ -19,16 +19,7 @@ array_relationships:
           name: step_runs
           schema: public
 
-# Layer 1 + Layer 2 in one boolean expression, since Hasura only evaluates a single
-# permission per role per table per action:
-#   - non-sensitive step types (anything but db_write / notify) -> owner OR editor
-#   - db_write / notify (steps that reach outside the sandbox: write your own tables,
-#     or fire an outbound alert) -> owner only
-# `org_id` is deliberately NOT in the insert column list: it's populated by the
-# `derive_org_from_workflow` DB trigger from `workflow_id`, so the check below has to
-# go through the `workflow` relationship (org_id doesn't exist yet at check time).
-# Update/delete act on an existing row, so they check through `organization` (org_id)
-# directly instead — same effect, one hop shorter.
+# Layer 1 + Layer 2 in one expression: db_write/notify need owner, everything else needs owner or editor. Insert checks through `workflow` since org_id isn't populated yet at check time (a DB trigger derives it from workflow_id); update/delete check through `organization` (org_id) directly.
 select_permissions:
   - role: user
     permission:

@@ -32,11 +32,7 @@ select_permissions:
             user_id:
               _eq: X-Hasura-User-Id
 
-# `notify` step type, implemented as an Event Trigger rather than an inline call in
-# the Action handler: the handler only ever INSERTs a row here (via admin secret).
-# This trigger fires on that insert and calls the function that actually posts to
-# Slack/email, then marks the row `sent`. Keeps the outbound side-effect decoupled,
-# retryable independent of the run, and auditable as its own table.
+# The notify step only INSERTs here; this trigger fires on that insert and actually posts to Slack/email, decoupled from the run itself.
 event_triggers:
   - name: notification_outbox
     definition:
