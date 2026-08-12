@@ -187,7 +187,15 @@ value = "https://plkfqikffdkkfvzbogtd.functions.eu-central-1.nhost.run/v1/events
 
 [[global.environment]]
 name = "LLM_PROVIDER"
-value = "stub"
+value = "groq"
+
+[[global.environment]]
+name = "LLM_API_KEY"
+value = "{{ secrets.LLM_API_KEY }}"
+
+[[global.environment]]
+name = "LLM_MODEL"
+value = "llama-3.1-8b-instant"
 
 [hasura]
 adminSecret = "{{ secrets.HASURA_GRAPHQL_ADMIN_SECRET }}"
